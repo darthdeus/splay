@@ -1,3 +1,5 @@
+CFLAGS=-g2
+
 default:
-	@gcc prd.c -o prd
+	@gcc $(CFLAGS) prd.c -o prd
 	@head -n 2000 maly.txt | ./prd

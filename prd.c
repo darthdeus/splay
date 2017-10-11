@@ -11,9 +11,24 @@ struct Node {
   int value;
 };
 
+struct Node* find(int value);
+void insert_do_vrcholu(struct Node* vrchol, int value);
+int jdem_doleva(int vrchol, int value);
+void splay();
+
 int stack_capacity = 0;
 int stack_size = 0;
 struct Node** stack = NULL;
+
+// Input buffer
+char buf[256];
+
+struct Node* strom;
+struct Node* koren;
+
+int strom_size;
+int vyuziti_stromu;
+
 
 void stack_init(int max_size) {
   assert(max_size > 0);
@@ -30,15 +45,42 @@ void stack_init(int max_size) {
   stack_size = 0;
 }
 
+void print_tree_node(FILE* f, struct Node* v) {
+  fprintf(f, "\"%d\" [fillcolor = pink, style = filled]\n", v->value);
+
+  if (v->left) {
+    fprintf(f, "\"%d\" -> \"%d\"\n", v->value, v->left->value);
+
+    print_tree_node(f, v->left);
+  }
+
+  if (v->right) {
+    fprintf(f, "\"%d\" -> \"%d\"", v->value, v->right->value);
+
+    print_tree_node(f, v->right);
+  }
+}
+
+void print_tree_dotgraph(const char* fname) {
+  FILE* f = fopen(fname, "w");
+
+  fprintf(f, "digraph G {\n");
+
+  print_tree_node(f, koren);
+
+  fprintf(f, "}\n");
+}
+
 void stack_clear() {
   assert(stack_capacity > 0);
   stack_size = 0;
 }
 
 void stack_push(struct Node* node) {
+  printf("s: %d, cap: %d\n", stack_size, stack_capacity);
   assert(stack_capacity - stack_size > 0);
 
-  stack[stack_size] = node;
+  stack[stack_size++] = node;
 }
 
 struct Node* stack_pop() {
@@ -54,18 +96,10 @@ int stack_is_empty() {
 }
 
 // Returns a pointer to the top of the stack so that it can be easily walked.
-struct Node** stack_top() {
+struct Node* stack_top() {
   assert(stack_size > 0);
-  return &stack[stack_size - 1];
+  return stack[stack_size - 1];
 }
-
-char buf[256];
-
-struct Node* strom;
-struct Node* koren;
-
-int strom_size;
-int vyuziti_stromu;
 
 //    a
 //   / \
@@ -282,7 +316,13 @@ struct Node* rotace_leva_prava(struct Node* a) {
 }
 
 void splay() {
+  print_tree_dotgraph("before.dot");
+
   struct Node *vrchol, *parent, *grandparent, *new_parent;
+
+  if (stack_is_empty()) goto finish;
+  else
+    printf("splayujujujuj\n");
 
   vrchol = stack_pop();
   assert(vrchol);
@@ -290,17 +330,28 @@ void splay() {
   while (!stack_is_empty()) {
     parent = stack_pop();
 
+    assert(parent->value != vrchol->value);
+    assert(parent != vrchol);
+
     if (stack_is_empty()) {
       // Only simple splay
       bool left_child = parent->left == vrchol;
 
       if (left_child) {
-        new_parent = rotace_leva(parent);
+        assert(parent->left == vrchol);
       } else {
-        new_parent = rotace_prava(parent);
+        assert(parent->right == vrchol);
       }
 
-      assert(new_parent == vrchol);
+      if (left_child) {
+        new_parent = rotace_leva(parent);
+        assert(new_parent == vrchol);
+      } else {
+        new_parent = rotace_prava(parent);
+        assert(new_parent == vrchol);
+      }
+
+      koren = new_parent;
     } else {
       grandparent = stack_pop();
 
@@ -321,11 +372,26 @@ void splay() {
         new_parent = rotace_prava_prava(grandparent);
       }
 
+      if (stack_is_empty()) {
+        koren = new_parent;
+      } else {
+        struct Node* grandgrandparent = stack_top();
+
+        if (grandgrandparent->left == grandparent) {
+          grandgrandparent->left = new_parent;
+        } else {
+          grandgrandparent->right = new_parent;
+        }
+      }
+
       assert(new_parent == vrchol);
     }
 
     stack_push(new_parent);
   }
+
+finish:
+  print_tree_dotgraph("after.dot");
 }
 
 int jdem_doleva(int vrchol, int value) { return vrchol < value; }
@@ -333,8 +399,17 @@ int jdem_doleva(int vrchol, int value) { return vrchol < value; }
 void insert_do_vrcholu(struct Node* vrchol, int value) {
   assert(vrchol);
 
+  stack_clear();
+
   while (vrchol) {
     struct Node* kam;
+
+    stack_push(vrchol);
+
+    if (vrchol->value == value) {
+      find(value);
+      return;
+    }
 
     // TODO: ignorovat ==
     int doleva = jdem_doleva(vrchol->value, value);
@@ -358,13 +433,18 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
 
       novy_vrchol->value = value;
 
+      stack_push(novy_vrchol);
+
       vyuziti_stromu++;
       break;
     }
   }
+
+  splay();
 }
 
 void insert(int num) {
+  printf("insertim %d\n", num);
   if (koren) {
     printf("mam strom\n");
 
@@ -380,7 +460,7 @@ void insert(int num) {
 }
 
 struct Node* find(int value) {
-  printf("finduju\n");
+  /* printf("finduju\n"); */
   struct Node* vrchol = koren;
 
   stack_clear();
