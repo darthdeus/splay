@@ -5,6 +5,14 @@
 #include <string.h>
 #include <stdbool.h>
 
+#define dump_assert(x)                    \
+  do {                                    \
+    if (!(x)) {                           \
+      print_tree_dotgraph("zzzzbug.dot"); \
+      assert(x);                          \
+    }                                     \
+  } while (0);
+
 struct Node {
   struct Node* left;
   struct Node* right;
@@ -14,7 +22,7 @@ struct Node {
 struct Node* find(int value);
 void insert_do_vrcholu(struct Node* vrchol, int value);
 int jdem_doleva(int vrchol, int value);
-void splay();
+void xsplay();
 
 int stack_capacity = 0;
 int stack_size = 0;
@@ -28,7 +36,6 @@ struct Node* koren;
 
 int strom_size;
 int vyuziti_stromu;
-
 
 void stack_init(int max_size) {
   assert(max_size > 0);
@@ -91,9 +98,7 @@ struct Node* stack_pop() {
   return stack[stack_size];
 }
 
-int stack_is_empty() {
-  return stack_size == 0;
-}
+int stack_is_empty() { return stack_size == 0; }
 
 // Returns a pointer to the top of the stack so that it can be easily walked.
 struct Node* stack_top() {
@@ -315,14 +320,102 @@ struct Node* rotace_leva_prava(struct Node* a) {
   return e;
 }
 
-void splay() {
-  print_tree_dotgraph("before.dot");
+int splay_count = 0;
 
-  struct Node *vrchol, *parent, *grandparent, *new_parent;
+void splay_bettur() {
+  printf("splay %d\n", splay_count);
+  splay_count++;
+  char fname_before[255];
+  char fname_after[255];
 
-  if (stack_is_empty()) goto finish;
-  else
-    printf("splayujujujuj\n");
+  sprintf(fname_before, "%d_before.dot", splay_count);
+  sprintf(fname_after, "%d_zafter.dot", splay_count);
+  print_tree_dotgraph(fname_before);
+  if (stack_is_empty())
+    goto done;
+
+  struct Node* vrchol, *parent, *grandparent, *new_parent;
+
+  vrchol = stack_pop();
+  assert(vrchol);
+
+  while (!stack_is_empty()) {
+    printf("iter\n");
+    parent = stack_pop();
+
+    if (stack_is_empty()) {
+      if (parent->left == vrchol) {
+        new_parent = rotace_leva(parent);
+      } else if (parent->right == vrchol) {
+        new_parent = rotace_prava(parent);
+      } else {
+        assert(false);
+      }
+
+      koren = new_parent;
+
+      goto done;
+    } else {
+      grandparent = stack_pop();
+
+      if (grandparent->left == parent) {
+        if (parent->left == vrchol) {
+          new_parent = rotace_leva_leva(grandparent);
+        } else if (parent->right == vrchol) {
+          new_parent = rotace_leva_prava(grandparent);
+        } else {
+          assert(false);
+        }
+      } else if (grandparent->right == parent) {
+        if (parent->left == vrchol) {
+          new_parent = rotace_prava_leva(grandparent);
+        } else if (parent->right == vrchol) {
+          new_parent = rotace_prava_prava(grandparent);
+        } else {
+          assert(false);
+        }
+      } else {
+        assert(false);
+      }
+
+      if (stack_is_empty()) {
+        koren = new_parent;
+      } else {
+        struct Node* grandgrandparent = stack_top();
+
+        if (grandgrandparent->left == grandparent) {
+          grandgrandparent->left = new_parent;
+        } else {
+          grandgrandparent->right = new_parent;
+        }
+      }
+
+      assert(new_parent == vrchol);
+    }
+
+    stack_push(new_parent);
+
+    new_parent = NULL;
+  }
+
+done:
+  print_tree_dotgraph(fname_after);
+}
+
+void xsplay() {
+  printf("splay %d\n", splay_count);
+  splay_count++;
+  char fname_before[255];
+  char fname_after[255];
+
+  sprintf(fname_before, "%d_before.dot", splay_count);
+  sprintf(fname_after, "%d_zafter.dot", splay_count);
+  print_tree_dotgraph(fname_before);
+
+  struct Node* vrchol, *parent, *grandparent, *new_parent;
+
+  if (stack_is_empty())
+    goto finish;
 
   vrchol = stack_pop();
   assert(vrchol);
@@ -330,18 +423,12 @@ void splay() {
   while (!stack_is_empty()) {
     parent = stack_pop();
 
-    assert(parent->value != vrchol->value);
-    assert(parent != vrchol);
+    /* dump_assert(parent->value != vrchol->value); */
+    /* assert(parent != vrchol); */
 
     if (stack_is_empty()) {
       // Only simple splay
       bool left_child = parent->left == vrchol;
-
-      if (left_child) {
-        assert(parent->left == vrchol);
-      } else {
-        assert(parent->right == vrchol);
-      }
 
       if (left_child) {
         new_parent = rotace_leva(parent);
@@ -352,6 +439,7 @@ void splay() {
       }
 
       koren = new_parent;
+      goto finish;
     } else {
       grandparent = stack_pop();
 
@@ -360,7 +448,6 @@ void splay() {
 
       if (!left_child) assert(parent->right == vrchol);
       if (!left_parent_child) assert(grandparent->right == parent);
-
 
       if (left_parent_child && left_child) {
         new_parent = rotace_leva_leva(grandparent);
@@ -391,7 +478,7 @@ void splay() {
   }
 
 finish:
-  print_tree_dotgraph("after.dot");
+  print_tree_dotgraph(fname_after);
 }
 
 int jdem_doleva(int vrchol, int value) { return vrchol < value; }
@@ -440,7 +527,7 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
     }
   }
 
-  splay();
+  splay_bettur();
 }
 
 void insert(int num) {
@@ -487,7 +574,7 @@ struct Node* find(int value) {
   } while (vrchol);
 
   if (found) {
-    splay();
+    splay_bettur();
   }
 
   return found;
@@ -498,6 +585,8 @@ int main() {
     int size;
 
     sscanf(buf + 2, "%d", &size);
+
+    printf("\n%s\n", buf);
 
     switch (buf[0]) {
       case '#':
