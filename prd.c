@@ -14,6 +14,7 @@
   } while (0);
 
 struct Node {
+  struct Node* parent;
   struct Node* left;
   struct Node* right;
   int value;
@@ -21,12 +22,7 @@ struct Node {
 
 struct Node* find(int value);
 void insert_do_vrcholu(struct Node* vrchol, int value);
-int jdem_doleva(int vrchol, int value);
 void xsplay();
-
-int stack_capacity = 0;
-int stack_size = 0;
-struct Node** stack = NULL;
 
 // Input buffer
 char buf[256];
@@ -36,21 +32,6 @@ struct Node* koren;
 
 int strom_size;
 int vyuziti_stromu;
-
-void stack_init(int max_size) {
-  assert(max_size > 0);
-
-  if (stack_capacity < max_size) {
-    stack = realloc(stack, max_size);
-  }
-
-  assert(stack);
-
-  memset(stack, 0, sizeof(struct Node*) * stack_size);
-
-  stack_capacity = max_size;
-  stack_size = 0;
-}
 
 void print_tree_node(FILE* f, struct Node* v) {
   fprintf(f, "\"%d\" [fillcolor = pink, style = filled]\n", v->value);
@@ -78,32 +59,16 @@ void print_tree_dotgraph(const char* fname) {
   fprintf(f, "}\n");
 }
 
-void stack_clear() {
-  assert(stack_capacity > 0);
-  stack_size = 0;
-}
-
-void stack_push(struct Node* node) {
-  printf("s: %d, cap: %d\n", stack_size, stack_capacity);
-  assert(stack_capacity - stack_size > 0);
-
-  stack[stack_size++] = node;
-}
-
-struct Node* stack_pop() {
-  assert(stack_size > 0);
-
-  stack_size--;
-
-  return stack[stack_size];
-}
-
-int stack_is_empty() { return stack_size == 0; }
-
-// Returns a pointer to the top of the stack so that it can be easily walked.
-struct Node* stack_top() {
-  assert(stack_size > 0);
-  return stack[stack_size - 1];
+void replace_child(struct Node* parent, struct Node* old, struct Node* new) {
+  if (parent) {
+    if (parent->left == old) {
+      parent->left = new;
+    } else if (parent->right == old) {
+      parent->right = new;
+    } else {
+      assert(false);
+    }
+  }
 }
 
 //    a
@@ -126,11 +91,18 @@ struct Node* rotace_prava(struct Node* a) {
   d = c->left;
   e = c->right;
 
+  replace_child(a->parent, a, c);
+
   c->left = a;
   c->right = e;
 
   a->left = b;
   a->right = d;
+
+  b->parent = a;
+  d->parent = a;
+  a->parent = c;
+  e->parent = c;
 
   return c;
 }
@@ -155,11 +127,18 @@ struct Node* rotace_leva(struct Node* a) {
   d = b->left;
   e = b->right;
 
+  replace_child(a->parent, a, b);
+
   b->left = d;
   b->right = a;
 
   a->left = e;
   a->right = c;
+
+  if (d) d->parent = b;
+  if (a) a->parent = b;
+  if (e) e->parent = a;
+  if (c) c->parent = a;
 
   return b;
 }
@@ -193,6 +172,8 @@ struct Node* rotace_leva_leva(struct Node* a) {
   f = d->left;
   g = d->right;
 
+  replace_child(a->parent, a, d);
+
   d->left = f;
   d->right = b;
 
@@ -201,6 +182,13 @@ struct Node* rotace_leva_leva(struct Node* a) {
 
   a->left = e;
   a->right = c;
+
+  if (f) f->parent = d;
+  if (b) b->parent = d;
+  if (g) g->parent = b;
+  if (a) a->parent = b;
+  if (e) e->parent = a;
+  if (c) c->parent = a;
 
   return d;
 }
@@ -233,6 +221,8 @@ struct Node* rotace_prava_prava(struct Node* a) {
   f = e->left;
   g = e->right;
 
+  replace_child(a->parent, a, e);
+
   e->left = c;
   e->right = g;
 
@@ -241,6 +231,13 @@ struct Node* rotace_prava_prava(struct Node* a) {
 
   a->left = b;
   a->right = d;
+
+  if (c) c->parent = e;
+  if (g) g->parent = e;
+  if (a) a->parent = c;
+  if (f) f->parent = c;
+  if (b) b->parent = a;
+  if (d) d->parent = a;
 
   return e;
 }
@@ -271,6 +268,8 @@ struct Node* rotace_prava_leva(struct Node* a) {
   f = d->left;
   g = d->right;
 
+  replace_child(a->parent, a, d);
+
   d->left = a;
   d->right = c;
 
@@ -279,6 +278,13 @@ struct Node* rotace_prava_leva(struct Node* a) {
 
   c->left = g;
   c->right = e;
+
+  if (a) a->parent = d;
+  if (c) c->parent = d;
+  if (b) b->parent = a;
+  if (f) f->parent = a;
+  if (g) g->parent = c;
+  if (e) e->parent = c;
 
   return d;
 }
@@ -308,6 +314,8 @@ struct Node* rotace_leva_prava(struct Node* a) {
   f = e->left;
   g = e->right;
 
+  replace_child(a->parent, a, e);
+
   e->left = b;
   e->right = b;
 
@@ -317,12 +325,19 @@ struct Node* rotace_leva_prava(struct Node* a) {
   a->left = g;
   a->right = c;
 
+  if (b) b->parent = e;
+  if (a) a->parent = e;
+  if (d) d->parent = b;
+  if (f) f->parent = b;
+  if (g) g->parent = a;
+  if (c) c->parent = a;
+
   return e;
 }
 
 int splay_count = 0;
 
-void splay_bettur() {
+void splay_from(struct Node* vrchol) {
   printf("splay %d\n", splay_count);
   splay_count++;
   char fname_before[255];
@@ -331,19 +346,16 @@ void splay_bettur() {
   sprintf(fname_before, "%d_before.dot", splay_count);
   sprintf(fname_after, "%d_zafter.dot", splay_count);
   print_tree_dotgraph(fname_before);
-  if (stack_is_empty())
-    goto done;
 
-  struct Node* vrchol, *parent, *grandparent, *new_parent;
+  struct Node *parent, *grandparent, *new_parent;
 
-  vrchol = stack_pop();
   assert(vrchol);
 
-  while (!stack_is_empty()) {
+  while (vrchol->parent) {
     printf("iter\n");
-    parent = stack_pop();
+    parent = vrchol->parent;
 
-    if (stack_is_empty()) {
+    if (!parent->parent) {
       if (parent->left == vrchol) {
         new_parent = rotace_leva(parent);
       } else if (parent->right == vrchol) {
@@ -356,7 +368,7 @@ void splay_bettur() {
 
       goto done;
     } else {
-      grandparent = stack_pop();
+      grandparent = parent->parent;
 
       if (grandparent->left == parent) {
         if (parent->left == vrchol) {
@@ -378,133 +390,44 @@ void splay_bettur() {
         assert(false);
       }
 
-      if (stack_is_empty()) {
+      if (!grandparent->parent) {
         koren = new_parent;
       } else {
-        struct Node* grandgrandparent = stack_top();
+        struct Node* grandgrandparent = grandparent->parent;
 
-        if (grandgrandparent->left == grandparent) {
-          grandgrandparent->left = new_parent;
-        } else {
-          grandgrandparent->right = new_parent;
-        }
+        replace_child(grandgrandparent, grandparent, new_parent);
       }
 
       assert(new_parent == vrchol);
     }
 
-    stack_push(new_parent);
-
+    vrchol = new_parent;
     new_parent = NULL;
+    parent = NULL;
+    grandparent = NULL;
   }
 
 done:
   print_tree_dotgraph(fname_after);
 }
 
-void xsplay() {
-  printf("splay %d\n", splay_count);
-  splay_count++;
-  char fname_before[255];
-  char fname_after[255];
-
-  sprintf(fname_before, "%d_before.dot", splay_count);
-  sprintf(fname_after, "%d_zafter.dot", splay_count);
-  print_tree_dotgraph(fname_before);
-
-  struct Node* vrchol, *parent, *grandparent, *new_parent;
-
-  if (stack_is_empty())
-    goto finish;
-
-  vrchol = stack_pop();
-  assert(vrchol);
-
-  while (!stack_is_empty()) {
-    parent = stack_pop();
-
-    /* dump_assert(parent->value != vrchol->value); */
-    /* assert(parent != vrchol); */
-
-    if (stack_is_empty()) {
-      // Only simple splay
-      bool left_child = parent->left == vrchol;
-
-      if (left_child) {
-        new_parent = rotace_leva(parent);
-        assert(new_parent == vrchol);
-      } else {
-        new_parent = rotace_prava(parent);
-        assert(new_parent == vrchol);
-      }
-
-      koren = new_parent;
-      goto finish;
-    } else {
-      grandparent = stack_pop();
-
-      bool left_child = parent->left == vrchol;
-      bool left_parent_child = grandparent->left == parent;
-
-      if (!left_child) assert(parent->right == vrchol);
-      if (!left_parent_child) assert(grandparent->right == parent);
-
-      if (left_parent_child && left_child) {
-        new_parent = rotace_leva_leva(grandparent);
-      } else if (left_parent_child && !left_child) {
-        new_parent = rotace_leva_prava(grandparent);
-      } else if (!left_parent_child && left_child) {
-        new_parent = rotace_prava_leva(grandparent);
-      } else if (!left_parent_child && !left_child) {
-        new_parent = rotace_prava_prava(grandparent);
-      }
-
-      if (stack_is_empty()) {
-        koren = new_parent;
-      } else {
-        struct Node* grandgrandparent = stack_top();
-
-        if (grandgrandparent->left == grandparent) {
-          grandgrandparent->left = new_parent;
-        } else {
-          grandgrandparent->right = new_parent;
-        }
-      }
-
-      assert(new_parent == vrchol);
-    }
-
-    stack_push(new_parent);
-  }
-
-finish:
-  print_tree_dotgraph(fname_after);
-}
-
-int jdem_doleva(int vrchol, int value) { return vrchol < value; }
-
 void insert_do_vrcholu(struct Node* vrchol, int value) {
   assert(vrchol);
-
-  stack_clear();
 
   while (vrchol) {
     struct Node* kam;
 
-    stack_push(vrchol);
-
     if (vrchol->value == value) {
-      find(value);
+      /* find(value); */
       return;
     }
 
-    // TODO: ignorovat ==
-    int doleva = jdem_doleva(vrchol->value, value);
-
-    if (doleva) {
+    if (vrchol->value < value) {
       kam = vrchol->left;
-    } else {
+    } else if (vrchol->value > value){
       kam = vrchol->right;
+    } else {
+      assert(false);
     }
 
     if (kam) {
@@ -512,22 +435,24 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
     } else {
       struct Node* novy_vrchol = strom + vyuziti_stromu;
 
-      if (doleva) {
+      if (vrchol->value < value) {
         vrchol->left = novy_vrchol;
-      } else {
+      } else if (vrchol->value > value) {
         vrchol->right = novy_vrchol;
+      } else {
+        assert(false);
       }
 
+      novy_vrchol->parent = vrchol;
       novy_vrchol->value = value;
 
-      stack_push(novy_vrchol);
+      /* stack_push(novy_vrchol); */
+      splay_from(novy_vrchol);
 
       vyuziti_stromu++;
       break;
     }
   }
-
-  splay_bettur();
 }
 
 void insert(int num) {
@@ -550,17 +475,15 @@ struct Node* find(int value) {
   /* printf("finduju\n"); */
   struct Node* vrchol = koren;
 
-  stack_clear();
-
   struct Node* found = NULL;
 
   do {
     if (!vrchol) break;
 
-    stack_push(vrchol);
-
     if (vrchol->value == value) {
       found = vrchol;
+
+      splay_from(found);
       break;
     }
 
@@ -572,10 +495,6 @@ struct Node* find(int value) {
       vrchol = vrchol->right;
     }
   } while (vrchol);
-
-  if (found) {
-    splay_bettur();
-  }
 
   return found;
 }
@@ -594,8 +513,6 @@ int main() {
         strom_size = size;
         koren = NULL;
         vyuziti_stromu = 0;
-
-        stack_init(strom_size);
 
         printf("Vytvarim strom %d\n", size);
         break;
