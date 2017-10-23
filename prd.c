@@ -33,6 +33,8 @@ struct Node* koren;
 int strom_size;
 int vyuziti_stromu;
 
+int nulls = 0;
+
 void print_tree_node(FILE* f, struct Node* v) {
   fprintf(f, "\"%d\" [fillcolor = pink, style = filled]\n", v->value);
 
@@ -40,31 +42,38 @@ void print_tree_node(FILE* f, struct Node* v) {
     fprintf(f, "\"%d\" -> \"%d\"\n", v->value, v->left->value);
 
     print_tree_node(f, v->left);
+  } else {
+    fprintf(f, "\"%d\" -> \"NULL%d\"\n", v->value, nulls++);
   }
 
   if (v->right) {
-    fprintf(f, "\"%d\" -> \"%d\"", v->value, v->right->value);
+    fprintf(f, "\"%d\" -> \"%d\"\n", v->value, v->right->value);
 
     print_tree_node(f, v->right);
+  } else {
+    fprintf(f, "\"%d\" -> \"NULL%d\"\n", v->value, nulls++);
   }
 }
 
 void print_tree_dotgraph(const char* fname) {
+  printf("printim\n");
+  nulls = 0;
   FILE* f = fopen(fname, "w");
 
   fprintf(f, "digraph G {\n");
+  fprintf(f, "graph [ordering=\"out\"];\n");
 
   print_tree_node(f, koren);
 
   fprintf(f, "}\n");
 }
 
-void replace_child(struct Node* parent, struct Node* old, struct Node* new) {
+void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
   if (parent) {
     if (parent->left == old) {
-      parent->left = new;
+      parent->left = newer;
     } else if (parent->right == old) {
-      parent->right = new;
+      parent->right = newer;
     } else {
       assert(false);
     }
@@ -99,10 +108,10 @@ struct Node* rotace_prava(struct Node* a) {
   a->left = b;
   a->right = d;
 
-  b->parent = a;
-  d->parent = a;
-  a->parent = c;
-  e->parent = c;
+  if (b) { b->parent = a; }
+  if (d) { d->parent = a; }
+  if (a) { a->parent = c; }
+  if (e) { e->parent = c; }
 
   return c;
 }
@@ -135,10 +144,10 @@ struct Node* rotace_leva(struct Node* a) {
   a->left = e;
   a->right = c;
 
-  if (d) d->parent = b;
-  if (a) a->parent = b;
-  if (e) e->parent = a;
-  if (c) c->parent = a;
+  if (d) { d->parent = b; }
+  if (a) { a->parent = b; }
+  if (e) { e->parent = a; }
+  if (c) { c->parent = a; }
 
   return b;
 }
@@ -183,12 +192,12 @@ struct Node* rotace_leva_leva(struct Node* a) {
   a->left = e;
   a->right = c;
 
-  if (f) f->parent = d;
-  if (b) b->parent = d;
-  if (g) g->parent = b;
-  if (a) a->parent = b;
-  if (e) e->parent = a;
-  if (c) c->parent = a;
+  if (f) { f->parent = d; }
+  if (b) { b->parent = d; }
+  if (g) { g->parent = b; }
+  if (a) { a->parent = b; }
+  if (e) { e->parent = a; }
+  if (c) { c->parent = a; }
 
   return d;
 }
@@ -232,12 +241,12 @@ struct Node* rotace_prava_prava(struct Node* a) {
   a->left = b;
   a->right = d;
 
-  if (c) c->parent = e;
-  if (g) g->parent = e;
-  if (a) a->parent = c;
-  if (f) f->parent = c;
-  if (b) b->parent = a;
-  if (d) d->parent = a;
+  if (c) { c->parent = e; }
+  if (g) { g->parent = e; }
+  if (a) { a->parent = c; }
+  if (f) { f->parent = c; }
+  if (b) { b->parent = a; }
+  if (d) { d->parent = a; }
 
   return e;
 }
@@ -279,12 +288,12 @@ struct Node* rotace_prava_leva(struct Node* a) {
   c->left = g;
   c->right = e;
 
-  if (a) a->parent = d;
-  if (c) c->parent = d;
-  if (b) b->parent = a;
-  if (f) f->parent = a;
-  if (g) g->parent = c;
-  if (e) e->parent = c;
+  if (a) { a->parent = d; }
+  if (c) { c->parent = d; }
+  if (b) { b->parent = a; }
+  if (f) { f->parent = a; }
+  if (g) { g->parent = c; }
+  if (e) { e->parent = c; }
 
   return d;
 }
@@ -325,12 +334,12 @@ struct Node* rotace_leva_prava(struct Node* a) {
   a->left = g;
   a->right = c;
 
-  if (b) b->parent = e;
-  if (a) a->parent = e;
-  if (d) d->parent = b;
-  if (f) f->parent = b;
-  if (g) g->parent = a;
-  if (c) c->parent = a;
+  if (b) { b->parent = e; }
+  if (a) { a->parent = e; }
+  if (d) { d->parent = b; }
+  if (f) { f->parent = b; }
+  if (g) { g->parent = a; }
+  if (c) { c->parent = a; }
 
   return e;
 }
@@ -412,6 +421,11 @@ done:
 }
 
 void insert_do_vrcholu(struct Node* vrchol, int value) {
+  char fname[255];
+
+  sprintf(fname, "%d_aainsert.dot", splay_count);
+  print_tree_dotgraph(fname);
+
   assert(vrchol);
 
   while (vrchol) {
@@ -422,9 +436,9 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
       return;
     }
 
-    if (vrchol->value < value) {
+    if (vrchol->value > value) {
       kam = vrchol->left;
-    } else if (vrchol->value > value){
+    } else if (vrchol->value < value){
       kam = vrchol->right;
     } else {
       assert(false);
@@ -435,9 +449,9 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
     } else {
       struct Node* novy_vrchol = strom + vyuziti_stromu;
 
-      if (vrchol->value < value) {
+      if (vrchol->value > value) {
         vrchol->left = novy_vrchol;
-      } else if (vrchol->value > value) {
+      } else if (vrchol->value < value) {
         vrchol->right = novy_vrchol;
       } else {
         assert(false);
@@ -487,19 +501,25 @@ struct Node* find(int value) {
       break;
     }
 
-    int doleva = jdem_doleva(vrchol->value, value);
-
-    if (doleva) {
+    if (vrchol->value > value) {
       vrchol = vrchol->left;
-    } else {
+    } else if (vrchol->value < value) {
       vrchol = vrchol->right;
+    } else {
+      assert(false);
     }
   } while (vrchol);
 
   return found;
 }
 
+void test();
+
 int main() {
+  test();
+
+  return 0;
+
   while (gets(buf)) {
     int size;
 
@@ -527,5 +547,63 @@ int main() {
 
         break;
     }
+  }
+}
+
+#define ASSIGN_L(a, b) { a->left = b; b->parent = a; }
+#define ASSIGN_R(a, b) { a->right = b; b->parent = a; }
+
+#define TEST_START() { \
+  nn = malloc(sizeof(struct Node) * 8); \
+                          \
+  a = &nn[0], \
+  b = &nn[1], \
+  c = &nn[2], \
+  d = &nn[3], \
+  e = &nn[4], \
+  f = &nn[5], \
+  g = &nn[6], \
+  x = &nn[7]; \
+                           \
+  ASSIGN_L(x, a);          \
+                           \
+  ASSIGN_L(a, b);          \
+  ASSIGN_R(a, c);          \
+                           \
+  ASSIGN_L(b, d);          \
+  ASSIGN_R(b, e);          \
+                           \
+  ASSIGN_L(c, f);          \
+  ASSIGN_R(c, g);          \
+}
+
+#define TEST_END() { free(nn); }
+
+#define AL(a, b) assert((a)->left == (b) && (a)->left->value == (b)->value);
+#define AR(a, b) assert((a)->right == (b) && (a)->right->value == (b)->value);
+
+void test() {
+
+  //      x
+  //      |
+  //      a
+  //     /  \
+  //    b    c
+  //   /\    /\
+  //  d  e  f  g
+  //
+  struct Node *x, *a, *b, *c, *d, *e, *f, *g;
+
+  struct Node *nn;
+  {
+    TEST_START();
+
+    AL(x, a);
+
+    AL(a, b); AR(a, c);
+    AL(b, d); AR(b, e);
+    AL(c, f); AR(c, g);
+
+    TEST_END();
   }
 }
