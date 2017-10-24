@@ -326,6 +326,45 @@ struct Node* rotace_leva_prava(struct Node* a) {
 
 int splay_count = 0;
 
+void splay(struct Node* n) {
+  while (n->parent && n->parent->parent) {
+    struct Node *parent = n->parent,
+                *grandparent = n->parent->parent;
+    // n is on the left
+    if (parent->value > n->value) {
+      if (grandparent->value > parent->value) {
+        n = rotace_leva_leva(grandparent);
+      } else if (grandparent->value < parent->value) {
+        n = rotace_prava_leva(grandparent);
+      } else {
+        dump_assert(false);
+      }
+    } else if (parent->value < n->value) {
+      if (grandparent->value > parent->value) {
+        n = rotace_leva_prava(grandparent);
+      } else if (grandparent->value < parent->value) {
+        n = rotace_prava_prava(grandparent);
+      } else {
+        dump_assert(false);
+      }
+    } else {
+      dump_assert(false);
+    }
+  }
+
+  while(n->parent) {
+    struct Node *parent = n->parent;
+
+    if (parent->value > n->value) {
+      n = rotace_leva(parent);
+    } else {
+      n = rotace_prava(parent);
+    }
+  }
+
+  koren = n;
+}
+
 void splay_from(struct Node* vrchol) {
   printf("splay %d\n", splay_count);
   splay_count++;
@@ -336,6 +375,7 @@ void splay_from(struct Node* vrchol) {
   sprintf(fname_after, "%d_zafter.dot", splay_count);
   print_tree_dotgraph(fname_before);
 
+  splay(vrchol);
   struct Node *parent, *grandparent, *new_parent;
 
   assert(vrchol);
