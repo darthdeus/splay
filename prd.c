@@ -34,6 +34,28 @@ int strom_size;
 int vyuziti_stromu;
 
 int nulls = 0;
+void text_print(struct Node* node);
+void text_print_rec(struct Node* node);
+
+void text_print_rec(struct Node* node) {
+  if (node->left) {
+    printf("(");
+    text_print_rec(node->left);
+    printf(")");
+  }
+  printf(",%d,", node->value);
+  if (node->right) {
+    printf("(");
+    text_print_rec(node->right);
+    printf(")");
+  }
+}
+
+
+void text_print(struct Node* node) {
+  text_print_rec(node);
+  printf("\n");
+}
 
 void print_tree_node(FILE* f, struct Node* v) {
   fprintf(f, "\"%d\" [fillcolor = pink, style = filled]\n", v->value);
@@ -63,6 +85,14 @@ void print_tree_dotgraph(const char* fname) {
   fprintf(f, "digraph G {\n");
   fprintf(f, "graph [ordering=\"out\"];\n");
 
+  if (koren->parent == NULL) {
+    fprintf(f, "NEKOREN [style=filled, fillcolor=lightblue]\n");
+    fprintf(f, "NEKOREN -> \"%d\"\n", koren->value);
+  } else {
+    fprintf(f, "\"%d FUJKOREN\" [style=filled, fillcolor=red]\n", koren->parent->value);
+    fprintf(f, "\"%d FUJKOREN\" -> \"%d\"\n", koren->parent->value, koren->value);
+  }
+
   print_tree_node(f, koren);
 
   fprintf(f, "}\n");
@@ -75,8 +105,10 @@ void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
     } else if (parent->right == old) {
       parent->right = newer;
     } else {
-      assert(false);
+      dump_assert(false);
     }
+  } else {
+    newer->parent = NULL;
   }
 }
 
@@ -94,19 +126,13 @@ void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
 struct Node* rotace_prava(struct Node* a) {
   struct Node* b, *c, *d, *e;
 
-  b = a->left;
-  c = a->right;
-
-  d = c->left;
-  e = c->right;
+  b = a->left; c = a->right;
+  d = c->left; e = c->right;
 
   replace_child(a->parent, a, c);
 
-  c->left = a;
-  c->right = e;
-
-  a->left = b;
-  a->right = d;
+  c->left = a; c->right = e;
+  a->left = b; a->right = d;
 
   if (b) { b->parent = a; }
   if (d) { d->parent = a; }
@@ -130,19 +156,13 @@ struct Node* rotace_prava(struct Node* a) {
 struct Node* rotace_leva(struct Node* a) {
   struct Node* b, *c, *d, *e;
 
-  b = a->left;
-  c = a->right;
-
-  d = b->left;
-  e = b->right;
+  b = a->left; c = a->right;
+  d = b->left; e = b->right;
 
   replace_child(a->parent, a, b);
 
-  b->left = d;
-  b->right = a;
-
-  a->left = e;
-  a->right = c;
+  b->left = d; b->right = a;
+  a->left = e; a->right = c;
 
   if (d) { d->parent = b; }
   if (a) { a->parent = b; }
@@ -172,25 +192,15 @@ struct Node* rotace_leva(struct Node* a) {
 struct Node* rotace_leva_leva(struct Node* a) {
   struct Node* b, *c, *d, *e, *f, *g;
 
-  b = a->left;
-  c = a->right;
-
-  d = b->left;
-  e = b->right;
-
-  f = d->left;
-  g = d->right;
+  b = a->left; c = a->right;
+  d = b->left; e = b->right;
+  f = d->left; g = d->right;
 
   replace_child(a->parent, a, d);
 
-  d->left = f;
-  d->right = b;
-
-  b->left = g;
-  b->right = a;
-
-  a->left = e;
-  a->right = c;
+  d->left = f; d->right = b;
+  b->left = g; b->right = a;
+  a->left = e; a->right = c;
 
   if (f) { f->parent = d; }
   if (b) { b->parent = d; }
@@ -221,25 +231,15 @@ struct Node* rotace_leva_leva(struct Node* a) {
 struct Node* rotace_prava_prava(struct Node* a) {
   struct Node* b, *c, *d, *e, *f, *g;
 
-  b = a->left;
-  c = a->right;
-
-  d = c->left;
-  e = c->right;
-
-  f = e->left;
-  g = e->right;
+  b = a->left; c = a->right;
+  d = c->left; e = c->right;
+  f = e->left; g = e->right;
 
   replace_child(a->parent, a, e);
 
-  e->left = c;
-  e->right = g;
-
-  c->left = a;
-  c->right = f;
-
-  a->left = b;
-  a->right = d;
+  e->left = c; e->right = g;
+  c->left = a; c->right = f;
+  a->left = b; a->right = d;
 
   if (c) { c->parent = e; }
   if (g) { g->parent = e; }
@@ -268,25 +268,15 @@ struct Node* rotace_prava_prava(struct Node* a) {
 struct Node* rotace_prava_leva(struct Node* a) {
   struct Node* b, *c, *d, *e, *f, *g;
 
-  b = a->left;
-  c = a->right;
-
-  d = c->left;
-  e = c->right;
-
-  f = d->left;
-  g = d->right;
+  b = a->left; c = a->right;
+  d = c->left; e = c->right;
+  f = d->left; g = d->right;
 
   replace_child(a->parent, a, d);
 
-  d->left = a;
-  d->right = c;
-
-  a->left = b;
-  a->right = b;
-
-  c->left = g;
-  c->right = e;
+  d->left = a; d->right = c;
+  a->left = b; a->right = b;
+  c->left = g; c->right = e;
 
   if (a) { a->parent = d; }
   if (c) { c->parent = d; }
@@ -314,25 +304,15 @@ struct Node* rotace_prava_leva(struct Node* a) {
 struct Node* rotace_leva_prava(struct Node* a) {
   struct Node* b, *c, *d, *e, *f, *g;
 
-  b = a->left;
-  c = a->right;
-
-  d = b->left;
-  e = b->right;
-
-  f = e->left;
-  g = e->right;
+  b = a->left; c = a->right;
+  d = b->left; e = b->right;
+  f = e->left; g = e->right;
 
   replace_child(a->parent, a, e);
 
-  e->left = b;
-  e->right = b;
-
-  b->left = d;
-  b->right = f;
-
-  a->left = g;
-  a->right = c;
+  e->left = b; e->right = b;
+  b->left = d; b->right = f;
+  a->left = g; a->right = c;
 
   if (b) { b->parent = e; }
   if (a) { a->parent = e; }
@@ -379,13 +359,16 @@ void splay_from(struct Node* vrchol) {
     } else {
       grandparent = parent->parent;
 
+      bool is_gp_root = grandparent == koren;
+
       if (grandparent->left == parent) {
         if (parent->left == vrchol) {
+          printf("ll ***\n");
           new_parent = rotace_leva_leva(grandparent);
         } else if (parent->right == vrchol) {
           new_parent = rotace_leva_prava(grandparent);
         } else {
-          assert(false);
+          dump_assert(false);
         }
       } else if (grandparent->right == parent) {
         if (parent->left == vrchol) {
@@ -399,12 +382,13 @@ void splay_from(struct Node* vrchol) {
         assert(false);
       }
 
-      if (!grandparent->parent) {
+      if (is_gp_root) {
         koren = new_parent;
       } else {
-        struct Node* grandgrandparent = grandparent->parent;
-
-        replace_child(grandgrandparent, grandparent, new_parent);
+        printf("neprekorenovavam*****\n");
+        /* struct Node* grandgrandparent = grandparent->parent; */
+        /*  */
+        /* replace_child(grandgrandparent, grandparent, new_parent); */
       }
 
       assert(new_parent == vrchol);
@@ -421,10 +405,10 @@ done:
 }
 
 void insert_do_vrcholu(struct Node* vrchol, int value) {
-  char fname[255];
-
-  sprintf(fname, "%d_aainsert.dot", splay_count);
-  print_tree_dotgraph(fname);
+  /* char fname[255]; */
+  /*  */
+  /* sprintf(fname, "%d_aainsert.dot", splay_count); */
+  /* print_tree_dotgraph(fname); */
 
   assert(vrchol);
 
@@ -516,9 +500,7 @@ struct Node* find(int value) {
 void test();
 
 int main() {
-  test();
-
-  return 0;
+  /* test(); return 0; */
 
   while (gets(buf)) {
     int size;
@@ -555,15 +537,15 @@ int main() {
 
 #define TEST_START() { \
   nn = malloc(sizeof(struct Node) * 8); \
-                          \
-  a = &nn[0], \
-  b = &nn[1], \
-  c = &nn[2], \
-  d = &nn[3], \
-  e = &nn[4], \
-  f = &nn[5], \
-  g = &nn[6], \
-  x = &nn[7]; \
+                           \
+  a = &nn[0],              \
+  b = &nn[1],              \
+  c = &nn[2],              \
+  d = &nn[3],              \
+  e = &nn[4],              \
+  f = &nn[5],              \
+  g = &nn[6],              \
+  x = &nn[7];              \
                            \
   ASSIGN_L(x, a);          \
                            \
