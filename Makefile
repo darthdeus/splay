@@ -4,7 +4,7 @@ CFLAGS=-g2
 
 default: clean
 	@gcc $(CFLAGS) prd.c -o prd
-	@head -n 2000 maly.txt | ./prd
+	@head -n 2000 velky.txt | ./prd
 	@./gen_images.sh
 
 p:

@@ -108,11 +108,26 @@ void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
       dump_assert(false);
     }
   }
+  old->parent = NULL;
   newer->parent = parent;
 }
 
 
+#define SET_L(a, b) { \
+  (a)->left = (b);    \
+                      \
+  if (b) {            \
+    (b)->parent = (a);\
+  }                   \
+}
 
+#define SET_R(a, b) { \
+  (a)->right = (b);    \
+                      \
+  if (b) {            \
+    (b)->parent = (a);\
+  }                   \
+}
 
 //    a
 //   / \
@@ -126,28 +141,14 @@ void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
 //    /\
 //    b d
 struct Node* rotace_prava(struct Node* a) {
-  struct Node* b, *c, *d, *e;
+  struct Node *c, *d;
 
-  b = a->left; c = a->right;
-  d = c->left; e = c->right;
+  c = a->right;
+  d = c->left;
 
-  /* if (a->parent) { */
-  /*   if (a->parent->left == a) { */
-  /*     a->parent->left = c; */
-  /*   } else { */
-  /*     a->parent->right = c; */
-  /*   } */
-  /* } */
-  /* c->parent = a->parent; */
   replace_child(a->parent, a, c);
 
-  c->left = a; c->right = e;
-  a->left = b; a->right = d;
-
-  if (b) { b->parent = a; }
-  if (d) { d->parent = a; }
-  if (a) { a->parent = c; }
-  if (e) { e->parent = c; }
+  SET_L(c, a); SET_R(a, d);
 
   return c;
 }
@@ -164,28 +165,14 @@ struct Node* rotace_prava(struct Node* a) {
 //       / \
 //       e  c
 struct Node* rotace_leva(struct Node* a) {
-  struct Node* b, *c, *d, *e;
+  struct Node* b, *e;
 
-  b = a->left; c = a->right;
-  d = b->left; e = b->right;
+  b = a->left;
+  e = b->right;
 
-  /* if (a->parent) { */
-  /*   if (a->parent->left == a) { */
-  /*     a->parent->left = b; */
-  /*   } else { */
-  /*     a->parent->right = b; */
-  /*   } */
-  /* } */
-  /* b->parent = a->parent; */
   replace_child(a->parent, a, b);
 
-  b->left = d; b->right = a;
-  a->left = e; a->right = c;
-
-  if (d) { d->parent = b; }
-  if (a) { a->parent = b; }
-  if (e) { e->parent = a; }
-  if (c) { c->parent = a; }
+  SET_R(b, a); SET_L(a, e);
 
   return b;
 }
