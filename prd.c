@@ -129,17 +129,11 @@ void replace_child(struct Node* parent, struct Node* old, struct Node* newer) {
   }                   \
 }
 
-//    a
-//   / \
-//  b   c
-//     / \
-//     d e
-//
-//      c
-//     / \
-//     a e
-//    /\
-//    b d
+//    a       //      c
+//   / \      //     / \
+//  b   c     //     a e
+//     / \    //    /\
+//     d e    //    b d
 struct Node* rotace_prava(struct Node* a) {
   struct Node *c, *d;
 
@@ -153,17 +147,11 @@ struct Node* rotace_prava(struct Node* a) {
   return c;
 }
 
-//    a
-//   / \
-//  b   c
-// / \
-// d e
-//
-//      b
-//     / \
-//     d  a
-//       / \
-//       e  c
+//    a     //      b
+//   / \    //     / \
+//  b   c   //     d  a
+// / \      //       / \
+// d e      //       e  c
 struct Node* rotace_leva(struct Node* a) {
   struct Node* b, *e;
 
@@ -177,162 +165,130 @@ struct Node* rotace_leva(struct Node* a) {
   return b;
 }
 
-/* //     a */
-/* //    / \ */
-/* //   b   c */
-/* //  / \ */
-/* //  d  e */
-/* // / \ */
-/* // f g */
-/* // */
-/* // */
-/* //     d */
-/* //    / \ */
-/* //    f  b */
-/* //      / \ */
-/* //      g  a */
-/* //        / \ */
-/* //        e  c */
-/* // */
-/* struct Node* rotace_leva_leva(struct Node* a) { */
-/*   struct Node* b, *c, *d, *e, *f, *g; */
-/*  */
-/*   dump_assert(false); */
-/*  */
-/*   b = a->left; c = a->right; */
-/*   d = b->left; e = b->right; */
-/*   f = d->left; g = d->right; */
-/*  */
-/*   replace_child(a->parent, a, d); */
-/*  */
-/*   d->left = f; d->right = b; */
-/*   b->left = g; b->right = a; */
-/*   a->left = e; a->right = c; */
-/*  */
-/*   if (f) { f->parent = d; } */
-/*   if (b) { b->parent = d; } */
-/*   if (g) { g->parent = b; } */
-/*   if (a) { a->parent = b; } */
-/*   if (e) { e->parent = a; } */
-/*   if (c) { c->parent = a; } */
-/*  */
-/*   return d; */
-/* } */
-/*  */
-/* //     a */
-/* //    / \ */
-/* //    b  c */
-/* //      / \ */
-/* //      d  e */
-/* //        / \ */
-/* //        f  g */
-/* // */
-/* //     e */
-/* //    / \ */
-/* //   c   g */
-/* //  / \ */
-/* //  a  f */
-/* // / \ */
-/* // b d */
-/* // */
-/* struct Node* rotace_prava_prava(struct Node* a) { */
-/*   struct Node* b, *c, *d, *e, *f, *g; */
-/*  */
-/* dump_assert(false); */
-/*   b = a->left; c = a->right; */
-/*   d = c->left; e = c->right; */
-/*   f = e->left; g = e->right; */
-/*  */
-/*   replace_child(a->parent, a, e); */
-/*  */
-/*   e->left = c; e->right = g; */
-/*   c->left = a; c->right = f; */
-/*   a->left = b; a->right = d; */
-/*  */
-/*   if (c) { c->parent = e; } */
-/*   if (g) { g->parent = e; } */
-/*   if (a) { a->parent = c; } */
-/*   if (f) { f->parent = c; } */
-/*   if (b) { b->parent = a; } */
-/*   if (d) { d->parent = a; } */
-/*  */
-/*   return e; */
-/* } */
-/*  */
-/* //     a */
-/* //    / \ */
-/* //    b  c */
-/* //      / \ */
-/* //      d  e */
-/* //     / \ */
-/* //     f  g */
-/* // */
-/* //     d */
-/* //    / \ */
-/* //   a    c */
-/* //  / \  / \ */
-/* //  b  f g  e */
-/* // */
-/* struct Node* rotace_prava_leva(struct Node* a) { */
-/*   struct Node* b, *c, *d, *e, *f, *g; */
-/* dump_assert(false); */
-/*  */
-/*   b = a->left; c = a->right; */
-/*   d = c->left; e = c->right; */
-/*   f = d->left; g = d->right; */
-/*  */
-/*   replace_child(a->parent, a, d); */
-/*  */
-/*   d->left = a; d->right = c; */
-/*   a->left = b; a->right = b; */
-/*   c->left = g; c->right = e; */
-/*  */
-/*   if (a) { a->parent = d; } */
-/*   if (c) { c->parent = d; } */
-/*   if (b) { b->parent = a; } */
-/*   if (f) { f->parent = a; } */
-/*   if (g) { g->parent = c; } */
-/*   if (e) { e->parent = c; } */
-/*  */
-/*   return d; */
-/* } */
-/*  */
-/* //     a */
-/* //    / \ */
-/* //    b  c */
-/* //   / \ */
-/* //   d  e */
-/* //     / \ */
-/* //     f  g */
-/* // */
-/* //     e */
-/* //    / \ */
-/* //   b    a */
-/* //  / \  / \ */
-/* //  d  f g  c */
-/* struct Node* rotace_leva_prava(struct Node* a) { */
-/*   struct Node* b, *c, *d, *e, *f, *g; */
-/* dump_assert(false); */
-/*  */
-/*   b = a->left; c = a->right; */
-/*   d = b->left; e = b->right; */
-/*   f = e->left; g = e->right; */
-/*  */
-/*   replace_child(a->parent, a, e); */
-/*  */
-/*   e->left = b; e->right = b; */
-/*   b->left = d; b->right = f; */
-/*   a->left = g; a->right = c; */
-/*  */
-/*   if (b) { b->parent = e; } */
-/*   if (a) { a->parent = e; } */
-/*   if (d) { d->parent = b; } */
-/*   if (f) { f->parent = b; } */
-/*   if (g) { g->parent = a; } */
-/*   if (c) { c->parent = a; } */
-/*  */
-/*   return e; */
-/* } */
+//     a     //     d
+//    / \    //    / \
+//   b   c   //    f  b
+//  / \      //      / \
+//  d  e     //      g  a
+// / \       //        / \
+// f g       //        e  c
+struct Node* rotace_leva_leva(struct Node* a) {
+  struct Node* b, *c, *d, *e, *f, *g;
+
+  dump_assert(false);
+
+  b = a->left; c = a->right;
+  d = b->left; e = b->right;
+  f = d->left; g = d->right;
+
+  replace_child(a->parent, a, d);
+
+  d->left = f; d->right = b;
+  b->left = g; b->right = a;
+  a->left = e; a->right = c;
+
+  if (f) { f->parent = d; }
+  if (b) { b->parent = d; }
+  if (g) { g->parent = b; }
+  if (a) { a->parent = b; }
+  if (e) { e->parent = a; }
+  if (c) { c->parent = a; }
+
+  return d;
+}
+
+//     a           //     e
+//    / \          //    / \
+//    b  c         //   c   g
+//      / \        //  / \
+//      d  e       //  a  f
+//        / \      // / \
+//        f  g     // b d
+struct Node* rotace_prava_prava(struct Node* a) {
+  struct Node* b, *c, *d, *e, *f, *g;
+
+dump_assert(false);
+  b = a->left; c = a->right;
+  d = c->left; e = c->right;
+  f = e->left; g = e->right;
+
+  replace_child(a->parent, a, e);
+
+  e->left = c; e->right = g;
+  c->left = a; c->right = f;
+  a->left = b; a->right = d;
+
+  if (c) { c->parent = e; }
+  if (g) { g->parent = e; }
+  if (a) { a->parent = c; }
+  if (f) { f->parent = c; }
+  if (b) { b->parent = a; }
+  if (d) { d->parent = a; }
+
+  return e;
+}
+
+//     a        //     d
+//    / \       //    / \
+//    b  c      //   a    c
+//      / \     //  / \  / \
+//      d  e    //  b  f g  e
+//     / \
+//     f  g
+struct Node* rotace_prava_leva(struct Node* a) {
+  struct Node* b, *c, *d, *e, *f, *g;
+dump_assert(false);
+
+  b = a->left; c = a->right;
+  d = c->left; e = c->right;
+  f = d->left; g = d->right;
+
+  replace_child(a->parent, a, d);
+
+  d->left = a; d->right = c;
+  a->left = b; a->right = b;
+  c->left = g; c->right = e;
+
+  if (a) { a->parent = d; }
+  if (c) { c->parent = d; }
+  if (b) { b->parent = a; }
+  if (f) { f->parent = a; }
+  if (g) { g->parent = c; }
+  if (e) { e->parent = c; }
+
+  return d;
+}
+
+//     a       //     e
+//    / \      //    / \
+//    b  c     //   b    a
+//   / \       //  / \  / \
+//   d  e      //  d  f g  c
+//     / \
+//     f  g
+struct Node* rotace_leva_prava(struct Node* a) {
+  struct Node* b, *c, *d, *e, *f, *g;
+  dump_assert(false);
+
+  b = a->left; c = a->right;
+  d = b->left; e = b->right;
+  f = e->left; g = e->right;
+
+  replace_child(a->parent, a, e);
+
+  e->left = b; e->right = b;
+  b->left = d; b->right = f;
+  a->left = g; a->right = c;
+
+  if (b) { b->parent = e; }
+  if (a) { a->parent = e; }
+  if (d) { d->parent = b; }
+  if (f) { f->parent = b; }
+  if (g) { g->parent = a; }
+  if (c) { c->parent = a; }
+
+  return e;
+}
 
 int splay_count = 0;
 
