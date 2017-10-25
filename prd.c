@@ -78,7 +78,8 @@ void print_tree_node(FILE* f, struct Node* v) {
 }
 
 void print_tree_dotgraph(const char* fname) {
-  printf("printim\n");
+  return;
+
   nulls = 0;
   FILE* f = fopen(fname, "w");
 
@@ -160,7 +161,8 @@ struct Node* rotace_leva(struct Node* a) {
 
   replace_child(a->parent, a, b);
 
-  SET_R(b, a); SET_L(a, e);
+  SET_R(b, a);
+  SET_L(a, e);
 
   return b;
 }
@@ -173,26 +175,16 @@ struct Node* rotace_leva(struct Node* a) {
 // / \       //        / \
 // f g       //        e  c
 struct Node* rotace_leva_leva(struct Node* a) {
-  struct Node* b, *c, *d, *e, *f, *g;
+  struct Node *b, *d, *e, *g;
 
-  dump_assert(false);
-
-  b = a->left; c = a->right;
-  d = b->left; e = b->right;
-  f = d->left; g = d->right;
+  b = a->left; d = b->left;
+  e = b->right; g = d->right;
 
   replace_child(a->parent, a, d);
 
-  d->left = f; d->right = b;
-  b->left = g; b->right = a;
-  a->left = e; a->right = c;
-
-  if (f) { f->parent = d; }
-  if (b) { b->parent = d; }
-  if (g) { g->parent = b; }
-  if (a) { a->parent = b; }
-  if (e) { e->parent = a; }
-  if (c) { c->parent = a; }
+  SET_R(d, b);
+  SET_L(b, g); SET_R(b, a);
+  SET_L(a, e);
 
   return d;
 }
@@ -205,25 +197,16 @@ struct Node* rotace_leva_leva(struct Node* a) {
 //        / \      // / \
 //        f  g     // b d
 struct Node* rotace_prava_prava(struct Node* a) {
-  struct Node* b, *c, *d, *e, *f, *g;
+  struct Node *c, *d, *e, *f;
 
-dump_assert(false);
-  b = a->left; c = a->right;
-  d = c->left; e = c->right;
-  f = e->left; g = e->right;
+  c = a->right; d = c->left;
+  e = c->right; f = e->left;
 
   replace_child(a->parent, a, e);
 
-  e->left = c; e->right = g;
-  c->left = a; c->right = f;
-  a->left = b; a->right = d;
-
-  if (c) { c->parent = e; }
-  if (g) { g->parent = e; }
-  if (a) { a->parent = c; }
-  if (f) { f->parent = c; }
-  if (b) { b->parent = a; }
-  if (d) { d->parent = a; }
+  SET_L(e, c);
+  SET_L(c, a); SET_R(c, f);
+  SET_R(a, d);
 
   return e;
 }
@@ -236,25 +219,16 @@ dump_assert(false);
 //     / \
 //     f  g
 struct Node* rotace_prava_leva(struct Node* a) {
-  struct Node* b, *c, *d, *e, *f, *g;
-dump_assert(false);
+  struct Node *c, *d, *f, *g;
 
-  b = a->left; c = a->right;
-  d = c->left; e = c->right;
+  c = a->right; d = c->left;
   f = d->left; g = d->right;
 
   replace_child(a->parent, a, d);
 
-  d->left = a; d->right = c;
-  a->left = b; a->right = b;
-  c->left = g; c->right = e;
-
-  if (a) { a->parent = d; }
-  if (c) { c->parent = d; }
-  if (b) { b->parent = a; }
-  if (f) { f->parent = a; }
-  if (g) { g->parent = c; }
-  if (e) { e->parent = c; }
+  SET_L(d, a); SET_R(d, c);
+  SET_R(a, f);
+  SET_L(c, g);
 
   return d;
 }
@@ -267,25 +241,16 @@ dump_assert(false);
 //     / \
 //     f  g
 struct Node* rotace_leva_prava(struct Node* a) {
-  struct Node* b, *c, *d, *e, *f, *g;
-  dump_assert(false);
+  struct Node *b, *e, *f, *g;
 
-  b = a->left; c = a->right;
-  d = b->left; e = b->right;
+  b = a->left; e = b->right;
   f = e->left; g = e->right;
 
   replace_child(a->parent, a, e);
 
-  e->left = b; e->right = b;
-  b->left = d; b->right = f;
-  a->left = g; a->right = c;
-
-  if (b) { b->parent = e; }
-  if (a) { a->parent = e; }
-  if (d) { d->parent = b; }
-  if (f) { f->parent = b; }
-  if (g) { g->parent = a; }
-  if (c) { c->parent = a; }
+  SET_L(e, b); SET_R(e, a);
+  SET_R(b, f);
+  SET_L(a, g);
 
   return e;
 }
@@ -332,7 +297,7 @@ void splay(struct Node* n) {
 }
 
 void splay_from(struct Node* vrchol) {
-  printf("splay %d\n", splay_count);
+  /* printf("splay %d\n", splay_count); */
   splay_count++;
   char fname_before[255];
   char fname_after[255];
@@ -460,14 +425,9 @@ void insert_do_vrcholu(struct Node* vrchol, int value) {
 }
 
 void insert(int num) {
-  printf("insertim %d\n", num);
   if (koren) {
-    printf("mam strom\n");
-
     insert_do_vrcholu(koren, num);
   } else {
-    printf("NEmam strom\n");
-
     koren = strom;
     koren->value = num;
 
@@ -476,7 +436,6 @@ void insert(int num) {
 }
 
 struct Node* find(int value) {
-  /* printf("finduju\n"); */
   struct Node* vrchol = koren;
 
   struct Node* found = NULL;
@@ -513,16 +472,16 @@ int main() {
 
     sscanf(buf + 2, "%d", &size);
 
-    printf("\n%s\n", buf);
+    /* printf("\n%s\n", buf); */
 
     switch (buf[0]) {
       case '#':
+        printf("Vytvarim strom %d\n", size);
         strom = (struct Node*)calloc(sizeof(struct Node), size);
         strom_size = size;
         koren = NULL;
         vyuziti_stromu = 0;
 
-        printf("Vytvarim strom %d\n", size);
         break;
 
       case 'I':
