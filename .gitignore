@@ -1,3 +1,6 @@
 *.dSYM
 prd
 velky.txt
+*.png
+*.txt
+splaygen

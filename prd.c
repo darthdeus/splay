@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdbool.h>
+#include <time.h>
 
 #define dump_assert(x)                    \
   do {                                    \
@@ -27,11 +28,16 @@ void xsplay();
 // Input buffer
 char buf[256];
 
+uint64_t find_count;
+uint64_t find_sum;
+
 struct Node* strom;
 struct Node* koren;
 
 int strom_size;
 int vyuziti_stromu;
+
+bool naive_splay = false;
 
 int nulls = 0;
 void text_print(struct Node* node);
@@ -258,30 +264,32 @@ struct Node* rotace_leva_prava(struct Node* a) {
 int splay_count = 0;
 
 void splay(struct Node* n) {
-  /* while (false && n->parent && n->parent->parent) { */
-  /*   struct Node *parent = n->parent, */
-  /*               *grandparent = n->parent->parent; */
-  /*   // n is on the left */
-  /*   if (parent->value > n->value) { */
-  /*     if (grandparent->value > parent->value) { */
-  /*       n = rotace_leva_leva(grandparent); */
-  /*     } else if (grandparent->value < parent->value) { */
-  /*       n = rotace_prava_leva(grandparent); */
-  /*     } else { */
-  /*       dump_assert(false); */
-  /*     } */
-  /*   } else if (parent->value < n->value) { */
-  /*     if (grandparent->value > parent->value) { */
-  /*       n = rotace_leva_prava(grandparent); */
-  /*     } else if (grandparent->value < parent->value) { */
-  /*       n = rotace_prava_prava(grandparent); */
-  /*     } else { */
-  /*       dump_assert(false); */
-  /*     } */
-  /*   } else { */
-  /*     dump_assert(false); */
-  /*   } */
-  /* } */
+  if (!naive_splay) {
+    while (n->parent && n->parent->parent) {
+      struct Node *parent = n->parent,
+                  *grandparent = n->parent->parent;
+      // n is on the left
+      if (parent->value > n->value) {
+        if (grandparent->value > parent->value) {
+          n = rotace_leva_leva(grandparent);
+        } else if (grandparent->value < parent->value) {
+          n = rotace_prava_leva(grandparent);
+        } else {
+          dump_assert(false);
+        }
+      } else if (parent->value < n->value) {
+        if (grandparent->value > parent->value) {
+          n = rotace_leva_prava(grandparent);
+        } else if (grandparent->value < parent->value) {
+          n = rotace_prava_prava(grandparent);
+        } else {
+          dump_assert(false);
+        }
+      } else {
+        dump_assert(false);
+      }
+    }
+  }
 
   while(n->parent) {
     struct Node *parent = n->parent;
@@ -440,7 +448,10 @@ struct Node* find(int value) {
 
   struct Node* found = NULL;
 
+  uint64_t depth = 0;
+
   do {
+    depth++;
     if (!vrchol) break;
 
     if (vrchol->value == value) {
@@ -459,13 +470,27 @@ struct Node* find(int value) {
     }
   } while (vrchol);
 
+  /* printf("\t\t\tfind %llu depth\n", depth); */
+  find_sum += depth;
+  find_count++;
+
   return found;
 }
 
 void test();
 
-int main() {
+int main(int argc, char** argv) {
+  if (argc > 1) {
+    fprintf(stderr, "Running naive splay.\n");
+    naive_splay = true;
+  } else {
+    fprintf(stderr, "Running splay with double rotations.\n");
+  }
   /* test(); return 0; */
+
+
+  clock_t time_before = clock();
+  clock_t last_time = time_before;
 
   while (gets(buf)) {
     int size;
@@ -476,11 +501,29 @@ int main() {
 
     switch (buf[0]) {
       case '#':
-        printf("Vytvarim strom %d\n", size);
+        find_sum = 0;
+        find_count = 0;
+
         strom = (struct Node*)calloc(sizeof(struct Node), size);
         strom_size = size;
         koren = NULL;
         vyuziti_stromu = 0;
+
+        clock_t now = clock();
+        last_time = now;
+
+        if (find_count > 0) {
+          float mean_depth = (float)find_sum / find_count;
+
+#ifdef VERBOSE_PRINT
+          clock_t running_diff = clock() - last_time;
+
+          printf("%.2f mean find depth, size: %d", mean_depth, size);
+          printf("\ttest time: %.3fs\n", (float)running_diff / CLOCKS_PER_SEC);
+#else
+          printf("%.2f\n", mean_depth);
+#endif
+        }
 
         break;
 
@@ -495,6 +538,11 @@ int main() {
         break;
     }
   }
+
+#ifdef VERBOSE_PRINT
+  clock_t time_diff = clock() - time_before;
+  printf("\n\nTotal time: %.3fs\n", (float)time_diff / CLOCKS_PER_SEC);
+#endif
 }
 
 #define ASSIGN_L(a, b) { a->left = b; b->parent = a; }
